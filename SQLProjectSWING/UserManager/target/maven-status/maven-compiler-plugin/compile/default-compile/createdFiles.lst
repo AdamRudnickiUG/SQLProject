@@ -1,0 +1,11 @@
+application\AppWindow.class
+_throwThisAway\JustDialog.class
+application\Main.class
+application\Main$1.class
+application\AppWindow$1.class
+application\Config.class
+utils\UiUtils.class
+model\Database.class
+model\UserRepository.class
+_throwThisAway\JustDialog$1.class
+application\AppGraph.class
