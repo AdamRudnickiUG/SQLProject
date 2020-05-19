@@ -23,12 +23,16 @@ public class Main {
         try {
             UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
         } catch (UnsupportedLookAndFeelException e) {
+            System.out.println("UnsupportedLookAndFeelException");
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
+            System.out.println("ClassNotFoundException");
             e.printStackTrace();
         } catch (InstantiationException e) {
+            System.out.println("InstantiationException");
             e.printStackTrace();
         } catch (IllegalAccessException e) {
+            System.out.println("IllegalAccessException");
             e.printStackTrace();
         }
     }
