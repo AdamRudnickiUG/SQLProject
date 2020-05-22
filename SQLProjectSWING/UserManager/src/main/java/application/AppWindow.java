@@ -44,28 +44,6 @@ public class AppWindow extends JFrame {
         mainVBox.add(makeDefaultButton("Edytuj kontakt_do_kontrahenta"));
 
 
-        //MENU CREATION
-        Menu testMenu = new Menu();
-
-        testMenu.add("first string");
-        testMenu.add("seconds string");
-
-        MenuItem firstItem = new MenuItem();
-        MenuItem secondItem = new MenuItem();
-
-        testMenu.add(firstItem);
-        testMenu.add(secondItem);
-
-
-        //
-        JPanel middlePanel = new JPanel();
-//        middlePanel.add(testMenu);
-
-//        getContentPane().add(testMenu, BorderLayout.SOUTH);
-//        mainHBox.add(testMenu);
-
-//        JLabel label = new JLabel("Add, edit, delete users");
-//        getContentPane().add(label);
     }
 
     public void showApp() {
@@ -73,19 +51,33 @@ public class AppWindow extends JFrame {
         setVisible(true);
     }
 
-    public JMenuBar defaultMenu(){
+    //MENU CREATION
+    public JMenuBar defaultMenu() {
         JMenuBar tempMenuBar = new JMenuBar();
 
         JMenu tempMenu = new JMenu("Menu");
 
-        JMenuItem item1 = new JMenuItem("example item 1");
-        JMenuItem item2 = new JMenuItem("example item 2");
-        JMenuItem item3 = new JMenuItem("example item 3");
+        JMenuItem postalCodes = new JMenuItem("Lista kodów pocztowych");
+        JMenuItem listOfUsers = new JMenuItem("Lista uzytkowników");
 
-        tempMenu.add(item1);
-        tempMenu.add(item2);
-        tempMenu.add(item3);
+        tempMenu.add(postalCodes);
+        tempMenu.add(listOfUsers);
 
+        //Make menu options do something
+        postalCodes.addActionListener((new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                AppGraph.getInstance().getPostCodesDialog().setVisible(true);
+            }
+        }));
+
+        listOfUsers.addActionListener((new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                AppGraph.getInstance().getJustDialog().setVisible(true);
+            }
+        }));
+
+
+        //filling menuBar
         tempMenuBar.add(tempMenu);
 
         return tempMenuBar;
