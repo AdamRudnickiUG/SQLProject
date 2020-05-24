@@ -6,16 +6,16 @@ import model.UserRepository;
 
 import javax.swing.*;
 import java.awt.*;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.Statement;
 
 
 public class AppGraph {
 
     // APP GRAPH SINGLETON
     private static AppGraph instance = null;
-
-
-
 
 
     // APPLICATION OBJECTS DI
@@ -31,41 +31,58 @@ public class AppGraph {
         if (instance == null) instance = new AppGraph();
 
 
-        try
-        {
-            // create our mysql database connection
-            String myDriver = "org.gjt.mm.mysql.Driver";
-            String myUrl = "jdbc:mysql://localhost/SQLProject";
-            Class.forName(myDriver);
-            Connection conn = DriverManager.getConnection(myUrl, "SQLProject", "");
+        try {
+            Connection con;
 
-            // our SQL SELECT query.
-            // if you only need a few columns, specify them by name instead of using "*"
-            String query = "SELECT * FROM users";
+            Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver");
 
-            // create the java statement
-            Statement st = conn.createStatement();
+            //Activate/use JDBC
+            con = DriverManager.getConnection("jdbc:sqlserver://" +
+                    "localhost:1433;databaseName=SQLProject;" +
+                    "user=Java;password=passwd;");
+            System.out.println("Po³¹czono z baz¹ danych");
+            con.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
+
+            String querySELECT = "SELECT * FROM urzadzenie";
+            String queryINSERT = "INSERT INTO urzadzenie VALUES\n" +
+                    "(5, 10)";
+            String queryDELETE = "DELETE FROM urzadzenie WHERE id = 5;\n";
+
+//          Creating basic statement
+            Statement st = con.createStatement();
+            Statement st2 = con.createStatement();
+
+
+//           Statement st2 = con.createStatement();
 
             // execute the query, and get a java resultset
-            ResultSet rs = st.executeQuery(query);
+            ResultSet rs = st.executeQuery(querySELECT);
+
 
             // iterate through the java resultset
-            while (rs.next())
-            {
-                int id = rs.getInt("id");
-                String firstName = rs.getString("first_name");
-                String lastName = rs.getString("last_name");
-                Date dateCreated = rs.getDate("date_created");
-                boolean isAdmin = rs.getBoolean("is_admin");
-                int numPoints = rs.getInt("num_points");
+            while (rs.next()) {
+                String id = rs.getString("id");
+                String ip_stacji = rs.getString("ip_stacji");
 
                 // print the results
-                System.out.format("%s, %s, %s, %s, %s, %s\n", id, firstName, lastName, dateCreated, isAdmin, numPoints);
+                System.out.format("%s, %s\n", id, ip_stacji);
+            }
+
+//            st.executeQuery(queryDELETE);
+//            st.executeQuery(queryINSERT);
+
+            ResultSet rs2 = st2.executeQuery(querySELECT);
+            while (rs2.next()) {
+                String id = rs2.getString("id");
+                String ip_stacji = rs2.getString("ip_stacji");
+
+                // print the results
+                System.out.format("%s, %s\n", id, ip_stacji);
             }
             st.close();
-        }
-        catch (Exception e)
-        {
+            st2.close();
+            con.close();
+        } catch (Exception e) {
             System.err.println("Got an exception! ");
             e.printStackTrace();
         }
