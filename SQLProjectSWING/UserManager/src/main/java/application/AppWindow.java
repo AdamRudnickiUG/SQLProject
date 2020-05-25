@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.SQLException;
 
 public class AppWindow extends JFrame {
 
@@ -27,23 +28,13 @@ public class AppWindow extends JFrame {
         //ADDITION OF TOP PANEL
         getContentPane().add(makeTopPanel(), BorderLayout.NORTH);
 
-//        topPanel.add(makeDefaultButton("Edytuj kody pocztowe"));
-//        topPanel.add(makeDefaultButton("Edytuj uzytowników"));
-//        topPanel.add(makeDefaultButton("Edytuj kontakt_do_kontrahenta"));
-
 
         //CREATION AND ADDITION OF MAIN VBOX
-
         Box mainVBox = Box.createVerticalBox();
         mainVBox.setOpaque(true);
-        mainVBox.setBackground(Color.blue);
+        mainVBox.setBackground(Color.lightGray);
 
         getContentPane().add(mainVBox, BorderLayout.CENTER);
-        mainVBox.add(makeDefaultButton("Edytuj kody pocztowe"));
-        mainVBox.add(makeDefaultButton("Edytuj uzytowników"));
-        mainVBox.add(makeDefaultButton("Edytuj kontakt_do_kontrahenta"));
-
-
     }
 
     public void showApp() {
@@ -66,13 +57,17 @@ public class AppWindow extends JFrame {
         //Make menu options do something
         postalCodes.addActionListener((new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                AppGraph.getInstance().getPostCodesDialog().setVisible(true);
+                try {
+                    AppGraph.getInstance().getPostCodesDialog().setVisible(true);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }));
 
         listOfUsers.addActionListener((new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                AppGraph.getInstance().getJustDialog().setVisible(true);
+                AppGraph.getInstance().getClientListDialog().setVisible(true);
             }
         }));
 
@@ -87,7 +82,6 @@ public class AppWindow extends JFrame {
         topPanel = new JPanel();
         UiUtils.minMaxPrefHeight(topPanel, GlobalSizes.menuHeight);
         UiUtils.border(topPanel, Color.lightGray, 0, 0, 1, 0);
-//        topPanel.add(makeTmpButton());
         topPanel.add(defaultMenu());
         return topPanel;
     }
