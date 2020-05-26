@@ -3,6 +3,8 @@ package DBOperations;
 import java.sql.*;
 
 public class TestOps {
+    public int perms = 0;
+
     public void testConnection() {
         try {
             Connection con;
@@ -43,6 +45,26 @@ public class TestOps {
             System.err.println("Got an exception! ");
             e.printStackTrace();
         }
+    }
+
+    public String getLastItemInColumn(Connection con, String tableName, String columnName) throws SQLException {
+        Statement st = con.createStatement();
+        Statement st2 = con.createStatement();
+        String theItem = null;
+        String querySELECT = "SELECT " + columnName + " FROM " + tableName;
+        ResultSet resultSet = st.executeQuery(querySELECT);
+        ResultSet resultSet2 = st2.executeQuery(querySELECT);
+
+        if (resultSet.isClosed()) {
+            theItem = null;
+        } else {
+//            resultSet.next();
+            while (resultSet.next()) {
+                resultSet2.next();
+            }
+            theItem = resultSet2.getString(columnName);
+        }
+        return theItem;
     }
 
     public Connection getConnection() {
@@ -112,5 +134,13 @@ public class TestOps {
         }
 
         return output;
+    }
+
+    public int getPerms() {
+        return perms;
+    }
+
+    public void setPerms(int newPerms) {
+        this.perms = newPerms;
     }
 }

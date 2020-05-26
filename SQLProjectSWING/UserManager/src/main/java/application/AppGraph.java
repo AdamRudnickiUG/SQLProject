@@ -6,11 +6,12 @@ import model.Database;
 import model.UserRepository;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 
 public class AppGraph {
@@ -21,7 +22,11 @@ public class AppGraph {
     // APPLICATION OBJECTS DI
     Database database = new Database();
     UserRepository userRepository = new UserRepository(database);
-    AppWindow appWindow = new AppWindow();
+
+    //-------------------------------------------------------------
+    AppWindow appWindow = new AppWindow(testOps, this);
+    //-------------------------------------------------------------
+
     JustDialog justDialog = new JustDialog(appWindow, userRepository);
     Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
     int screeHeight = (int) screenSize.getHeight();
@@ -45,14 +50,17 @@ public class AppGraph {
         return justDialog;
     }
 
+
+    //------------------------------------------------------------------------------------------
     public JustDialog getPostCodesDialog() throws SQLException {
+        final int indexInList;
         int postalCodesAmount = testOps.getColumnSize(testOps.getConnection(), "kod_poczt_1", "kp1_kod");
 
         Box mainVBox = Box.createVerticalBox();
         mainVBox.setOpaque(true);
         mainVBox.setBackground(Color.lightGray);
 
-        JustDialog tempDialog = new JustDialog(appWindow, userRepository);
+        final JustDialog tempDialog = new JustDialog(appWindow, userRepository);
 
         tempDialog.add(mainVBox);
 
@@ -60,37 +68,36 @@ public class AppGraph {
         Box smallHbox = Box.createHorizontalBox();
         mainVBox.add(smallHbox);
 
-        JScrollPane scrollPane = new JScrollPane();
-        Font fontBig = new Font("SansSerif", Font.BOLD, 20);
+
+        //Adds List of post codes
         String[] postCodes = testOps.getColumnData(testOps.getConnection(), "kod_poczt_1", "kp1_kod");
-        String[] header = new String[]{"kod_poczt_1"};
-
-        //TODO: https://stackoverflow.com/questions/28128035/how-to-add-table-header-and-scrollbar-in-jtable-java Make this work!!!
-        DefaultTableModel model = new DefaultTableModel(postCodes, header);
-
-        //TODO: Does not display values for some reason
-        JTable table = new JTable();
-        JLabel[] areas = new JLabel[postalCodesAmount];
-        for (int i = 0; i < postalCodesAmount; i++) {
-            areas[i] = new JLabel();
-            areas[i].setFont(fontBig);
-            areas[i].setText(postCodes[i]);
-            areas[i].setSize(10, 10);
-//            scrollPane.add(areas[i]);
-            table.add(areas[i]);
-//            System.out.println(areas[i].getText());
+        DefaultListModel model2 = new DefaultListModel();
+        for (String s : postCodes) {
+            model2.addElement(s);
         }
+        final JList list = new JList(model2);
+        JScrollPane scrollableList = new JScrollPane(list);
+        mainVBox.add(scrollableList);
 
-        scrollPane.add(table);
 
-        mainVBox.add(scrollPane);
+        final TextField textFieldLeft = new TextField();
+        final TextField textFieldRight = new TextField();
+        Box smallerHbox = Box.createHorizontalBox();
+        mainVBox.add(smallerHbox);
+        smallerHbox.add(textFieldLeft);
+        smallerHbox.add(textFieldRight);
+
 
         //Adds edition button
         MyButton editButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
         editButton.setText("edit");
         editButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                getCodeAdditionDialog().setVisible(true);
+                if (testOps.getPerms() == 0) {
+                    getErrorDialog("Goscie nie moga edytowac bazy");
+                } else {
+                    getCodeAdditionDialog().setVisible(true);
+                }
             }
         });
         smallHbox.add(editButton);
@@ -101,7 +108,54 @@ public class AppGraph {
         addButton.setText("add");
         addButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                getCodeAdditionDialog().setVisible(true);
+                if (testOps.getPerms() == 0) {
+                    getErrorDialog("Goscie nie moga edytowac bazy.");
+                } else {
+                    String temp1 = textFieldLeft.getText();
+                    String temp2 = textFieldRight.getText();
+
+                    Connection con = testOps.getConnection();
+                    String QueryADD = null;
+
+                    char lastIDChar = '0';
+
+                    String result = null;
+                    try {
+                        result = (testOps.getLastItemInColumn(con, "kod_poczt_1", "id"));
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+
+
+                    if (result == null) {
+                        lastIDChar = '1';
+                    } else if (Integer.parseInt(result) >= 0)
+                        lastIDChar = (char) (Integer.parseInt(result) + 1);
+
+
+                    QueryADD = "INSERT INTO kod_poczt_1 VALUES ("
+                            + "'" + lastIDChar + "'"
+                            + ", '" + temp1
+                            + "', '" + temp2 + "')";
+
+                    Statement st = null;
+
+
+                    //TODO: For some obscure reason, ID is not generated properly
+                    try {
+                        st = con.createStatement();
+                        try {
+                            st.executeUpdate(QueryADD);
+                            getErrorDialog("Record addition succesfull");
+                        } catch (SQLException e) {
+                            getErrorDialog("Can't add item");
+                            e.printStackTrace();
+                        }
+                    } catch (SQLException e) {
+                        getErrorDialog("Can't create statement");
+                        e.printStackTrace();
+                    }
+                }
             }
         });
         smallHbox.add(addButton);
@@ -112,27 +166,69 @@ public class AppGraph {
         deleteButton.setText("delete");
         deleteButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                getJustDialog().setVisible(true);
+                if (testOps.getPerms() != 2) {
+                    getErrorDialog("Tylko admin mo¿e usuwaæ zawartoœæ bazy.");
+                } else {
+                    String temp = (String) list.getSelectedValue();
+                    String QueryDELETE = "DELETE FROM kod_poczt_1 WHERE kp1_kod = '" + temp + "'";
+                    Connection con = testOps.getConnection();
+                    Statement st = null;
+                    try {
+                        st = con.createStatement();
+                        try {
+                            st.executeUpdate(QueryDELETE);
+                            getErrorDialog("Record succesfully deleted");
+                        } catch (SQLException e) {
+                            getErrorDialog("Can't delete item");
+                            e.printStackTrace();
+                        }
+                    } catch (SQLException e) {
+                        getErrorDialog("Can't create statement");
+                        e.printStackTrace();
+                    }
+                }
             }
         });
         smallHbox.add(deleteButton);
-
-
         return tempDialog;
     }
 
-    public JustDialog getClientListDialog() {
+
+    //------------------------------------------------------------------------------------------
+    public JustDialog getClientListDialog() throws SQLException {
         Box mainVBox = Box.createVerticalBox();
         mainVBox.setOpaque(true);
         mainVBox.setBackground(Color.lightGray);
+
+        Box smallHbox = Box.createHorizontalBox();
+        mainVBox.add(smallHbox);
 
         JustDialog tempDialog = new JustDialog(appWindow, userRepository);
 
         tempDialog.add(mainVBox);
 
-        mainVBox.add(mainVBox.createHorizontalStrut(GlobalSizes.buttonHeight * 2));
-        Box smallHbox = Box.createHorizontalBox();
-        mainVBox.add(smallHbox);
+        String[] names = testOps.getColumnData(testOps.getConnection(), "uzytkownik", "imie");
+        String[] surnames = testOps.getColumnData(testOps.getConnection(), "uzytkownik", "nazwisko");
+
+        String[] jointNames = new String[names.length];
+        for (int i = 0; i < names.length; i++) {
+            jointNames[i] = surnames[i] + " " + names[i];
+        }
+
+
+        DefaultListModel model = new DefaultListModel();
+        for (String s : jointNames) {
+            model.addElement(s);
+        }
+        final JList list = new JList(model);
+        final JScrollPane scrollableList = new JScrollPane(list);
+//        tempDialog.add(scrollableList);
+
+        smallHbox.add(scrollableList);
+        final String defaultText = "Wprowadz dane";
+        final JTextField textfield = new JTextField(defaultText);
+        smallHbox.add(textfield);
+        textfield.setBackground(Color.darkGray);
 
         MyButton editButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
         editButton.setText("edit");
@@ -140,12 +236,91 @@ public class AppGraph {
 
         MyButton addButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
         addButton.setText("add");
+        addButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (testOps.getPerms() == 0) {
+                    getErrorDialog("Goœcie nie mog¹ zmieniaæ bazy!");
+                } else {
+                    String data = textfield.getText();
+                    if (data == defaultText) {
+                        getErrorDialog("Wpisz jakieœ dane!");
+                    } else {
+                        Connection con = testOps.getConnection();
+                        String QueryADD = null;
+
+                        int lastID = 0;
+                        try {
+                            lastID = (int) (Float.valueOf(testOps.getLastItemInColumn(con, "uzytkownik", "id"))).floatValue();
+                        } catch (SQLException e) {
+                            e.printStackTrace();
+                        }
+                        char lastIDChar = (char) lastID;
+
+
+                        QueryADD = "INSERT INTO uzytkownik VALUES (" + lastID + data + ")";
+
+                        Statement st = null;
+                        try {
+                            st = con.createStatement();
+                            try {
+                                st.executeUpdate(QueryADD);
+                                getErrorDialog("Record addition succesfull");
+                            } catch (SQLException e) {
+                                getErrorDialog("Can't add item");
+                                e.printStackTrace();
+                            }
+                        } catch (SQLException e) {
+                            getErrorDialog("Can't create statement");
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            }
+        });
         smallHbox.add(addButton);
+
+        MyButton deleteButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
+        deleteButton.setText("delete");
+        deleteButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (testOps.getPerms() < 2) {
+                    getErrorDialog("Brak uprawnieñ do usuwania - tylko admin mo¿e to zrobiæ");
+                } else {
+                    String temp = (String) list.getSelectedValue();
+                    String arr[] = temp.split(" ", 2);
+
+                    String firstWord = arr[0];   //the
+                    String theRest = arr[1];     //quick brown fox
+
+//                getJustDialog().setVisible(true);
+
+
+                    String QueryDELETE = "DELETE FROM uzytkownik WHERE nazwisko =' " + firstWord + "' AND imie = '" + theRest + "'";
+                    Connection con = testOps.getConnection();
+                    Statement st = null;
+                    try {
+                        st = con.createStatement();
+                        try {
+                            st.executeUpdate(QueryDELETE);
+                            getErrorDialog("Record succesfully deleted");
+                        } catch (SQLException e) {
+                            getErrorDialog("Can't delete item");
+                            e.printStackTrace();
+                        }
+                    } catch (SQLException e) {
+                        getErrorDialog("Can't create statement");
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+        smallHbox.add(deleteButton);
 
         return tempDialog;
     }
 
 
+    //------------------------------------------------------------------------------------------
     public JustDialog getCodeAdditionDialog() {
         Box mainVBox = Box.createVerticalBox();
         mainVBox.setOpaque(true);
@@ -159,7 +334,10 @@ public class AppGraph {
         saveButton.setText("Save");
         saveButton.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                saveButton.setText("Placeholder for saving");
+                if (testOps.getPerms() == 2)
+                    saveButton.setText("Placeholder for saving");
+                else
+                    getErrorDialog("Nie masz wystarczaj¹cych uprawnieñ");
             }
         });
 
@@ -174,19 +352,29 @@ public class AppGraph {
         mainVBox.add(saveButton);
         mainVBox.add(cancelButton);
 
-//        mainVBox.add(mainVBox.createHorizontalStrut(GlobalSizes.buttonHeight * 2));
-//        Box smallHbox = Box.createHorizontalBox();
-//        mainVBox.add(smallHbox);
-//
-//        MyButton editButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
-//        editButton.setText("edit");
-//        smallHbox.add(editButton);
-//
-//        MyButton addButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
-//        addButton.setText("add");
-//        smallHbox.add(addButton);
-
         return tempDialog;
     }
 
+
+    //------------------------------------------------------------------------------------------
+    public void getErrorDialog(String errorMessage) {
+        Box mainVBox = Box.createVerticalBox();
+        mainVBox.setOpaque(true);
+        mainVBox.setBackground(Color.darkGray);
+
+        final JustDialog tempDialog = new JustDialog(appWindow, userRepository);
+        tempDialog.add(mainVBox);
+
+
+        Font font1 = new Font("SansSerif", Font.BOLD, 30);
+
+        JTextField errorField = new JTextField();
+        errorField.setText(errorMessage);
+        mainVBox.add(errorField);
+        tempDialog.setVisible(true);
+        errorField.setHorizontalAlignment(JTextField.CENTER);
+        errorField.setFont(font1);
+        errorField.setEditable(false);
+//        errorField.
+    }
 }
