@@ -10,6 +10,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -376,5 +377,386 @@ public class AppGraph {
         errorField.setFont(font1);
         errorField.setEditable(false);
 //        errorField.
+    }
+
+    //------------------------------------------------------------------------------------------
+    public void getCarsDialog() throws SQLException {
+        Box mainVBox = Box.createVerticalBox();
+        mainVBox.setOpaque(true);
+        mainVBox.setBackground(Color.lightGray);
+
+        Box mainHBox = Box.createHorizontalBox();
+        mainVBox.add(mainHBox);
+
+        Box smallVbox = Box.createVerticalBox();
+        mainHBox.add(smallVbox);
+
+        final JustDialog tempDialog = new JustDialog(appWindow, userRepository);
+
+        tempDialog.add(mainVBox);
+
+        String[] modelArray = testOps.getColumnData(testOps.getConnection(), "samochody", "model");
+        String[] colourArray = testOps.getColumnData(testOps.getConnection(), "samochody", "kolor");
+        String[] typeArray = testOps.getColumnData(testOps.getConnection(), "samochody", "typ");
+        String[] ids = testOps.getColumnData(testOps.getConnection(), "samochody", "id");
+
+        String[] allInfo = new String[modelArray.length];
+
+        for (int i = 0; i < modelArray.length; i++) {
+            allInfo[i] = "Typ: " + typeArray[i] +
+                    "  kolor: " + colourArray[i] +
+                    "  model: " + modelArray[i];
+        }
+
+
+        final DefaultListModel model = new DefaultListModel();
+        for (int i = 0; i < modelArray.length; i++) {
+            model.addElement(allInfo[i]);
+        }
+
+        final JList listOfCars = new JList(model);
+        final JScrollPane scrollableList = new JScrollPane(listOfCars);
+        smallVbox.add(scrollableList);
+
+
+        JPanel dataPanel = new JPanel();
+        JPanel descriptionPanel = new JPanel();
+
+        mainHBox.add(dataPanel);
+        mainHBox.add(descriptionPanel);
+
+        Box dataInputVBox = Box.createVerticalBox();
+        Box descriptionVBox = Box.createVerticalBox();
+
+        dataPanel.add(dataInputVBox);
+        descriptionPanel.add(descriptionVBox);
+
+        final TextField modelField = new TextField();
+        final TextField colourField = new TextField();
+        final TextField typeField = new TextField();
+
+        dataInputVBox.add(modelField);
+        dataInputVBox.add(colourField);
+        dataInputVBox.add(typeField);
+
+        descriptionVBox.add(new JLabel("model"));
+        descriptionVBox.add(Box.createVerticalStrut(10));
+        descriptionVBox.add(new JLabel("colour"));
+        descriptionVBox.add(Box.createVerticalStrut(10));
+        descriptionVBox.add(new JLabel("type"));
+
+        tempDialog.setVisible(true);
+
+        Box buttonBox = Box.createHorizontalBox();
+        mainVBox.add(buttonBox);
+
+        MyButton addButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
+        addButton.setText("add");
+        addButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (testOps.getPerms() == 0) {
+                    getErrorDialog("Goœcie nie mog¹ zmieniaæ bazy!");
+                } else {
+                    Connection con = testOps.getConnection();
+
+                    Statement st = null;
+                    try {
+                        st = con.createStatement();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    String QueryADD = "INSERT INTO samochody VALUES ('" +
+                            typeField.getText() + "', '" +
+                            colourField.getText() + "', '" +
+                            modelField.getText() + "')";
+                    try {
+                        st.executeUpdate(QueryADD);
+                        getErrorDialog("Dodano samochod");
+                        tempDialog.setVisible(false);
+                    } catch (SQLException e) {
+                        getErrorDialog("Can't add the car");
+                        e.printStackTrace();
+                    }
+                    try {
+                        con.close();
+                    } catch (SQLException ex) {
+                        getErrorDialog("Can't close connection");
+                        ex.printStackTrace();
+                    }
+                }
+            }
+        });
+        buttonBox.add(addButton);
+
+        MyButton deleteButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
+        deleteButton.setText("delete");
+        deleteButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (testOps.getPerms() < 2) {
+                    getErrorDialog("Goœcie nie mog¹ zmieniaæ bazy!");
+                } else {
+                    Connection con = testOps.getConnection();
+
+                    Statement st = null;
+                    try {
+                        st = con.createStatement();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    String QueryDELETE = "DELETE FROM samochody WHERE id = " + listOfCars.getMinSelectionIndex() + 1;
+                    //TODO: Remove items by their id (from String table ids) rather than like now
+                    try {
+                        st.executeUpdate(QueryDELETE);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        });
+    }
+
+
+    //------------------------------------------------------------------------------------------
+    public void getPaymentDialog() throws SQLException {
+
+        Box mainVBox = Box.createVerticalBox();
+        mainVBox.setOpaque(true);
+        mainVBox.setBackground(Color.lightGray);
+
+        Box mainHBox = Box.createHorizontalBox();
+        mainVBox.add(mainHBox);
+
+        Box smallVbox = Box.createVerticalBox();
+        mainHBox.add(smallVbox);
+
+        final JustDialog tempDialog = new JustDialog(appWindow, userRepository);
+
+        tempDialog.add(mainVBox);
+
+        String[] baseValues = testOps.getColumnData(testOps.getConnection(), "detaleOplat", "kwotaBazowa");
+        String[] multipliers = testOps.getColumnData(testOps.getConnection(), "detaleOplat", "przelicznik");
+        String[] kontrahents = testOps.getColumnData(testOps.getConnection(), "detaleOplat", "id_kontrahenta");
+        String[] clients = testOps.getColumnData(testOps.getConnection(), "detaleOplat", "id_uzytkownika");
+
+        String[] allInfo = new String[baseValues.length];
+
+
+        float[] realValues = new float[baseValues.length];
+
+        for (int i = 0; i < baseValues.length; i++) {
+            realValues[i] = Integer.parseInt(baseValues[i]) * Float.parseFloat(multipliers[i]);
+        }
+
+
+        for (int i = 0; i < baseValues.length; i++) {
+            allInfo[i] = "kontrahent: " + kontrahents[i] +
+                    "  uzytkownik: " + clients[i] +
+                    " przelicznik: " + multipliers[i] +
+                    " cena bazowa: " + baseValues[i] +
+                    " cena koncowa: " + realValues[i];
+        }
+
+
+        final DefaultListModel model = new DefaultListModel();
+        for (int i = 0; i < baseValues.length; i++) {
+            model.addElement(allInfo[i]);
+        }
+
+        final JList listOfPayments = new JList(model);
+        final JScrollPane scrollableList = new JScrollPane(listOfPayments);
+        smallVbox.add(scrollableList);
+
+
+        final String defaultText = "Wprowadz dane";
+        final JTextField textfield = new JTextField(defaultText);
+
+        JPanel dataPanel = new JPanel();
+        JPanel descriptionPanel = new JPanel();
+
+        mainHBox.add(dataPanel);
+        mainHBox.add(descriptionPanel);
+
+        Box dataInputVBox = Box.createVerticalBox();
+        Box descriptionVBox = Box.createVerticalBox();
+
+        dataPanel.add(dataInputVBox);
+        descriptionPanel.add(descriptionVBox);
+
+        //id_kontrahenta, przelicznik, id_uzytownika, kwotaBazowa
+
+        final TextField kontrahentField = new TextField();
+        final TextField przelicznikField = new TextField();
+        final TextField userNameField = new TextField();
+        final TextField userSurnameField = new TextField();
+        final TextField kwotaField = new TextField();
+
+        dataInputVBox.add(kontrahentField);
+        dataInputVBox.add(przelicznikField);
+        dataInputVBox.add(userNameField);
+        dataInputVBox.add(userSurnameField);
+        dataInputVBox.add(kwotaField);
+
+
+        JLabel kontrahent = new JLabel("id_kontrahenta");
+        JLabel przelicznik = new JLabel("przelicznik");
+        JLabel uzytkownikName = new JLabel("imie uzytkownika");
+        JLabel uzytkownikSurname = new JLabel("nazwisko uzytkownika");
+        JLabel kwota = new JLabel("kwota podstawowa");
+
+        descriptionVBox.add(kontrahent);
+        descriptionVBox.add(Box.createVerticalStrut(10));
+        descriptionVBox.add(przelicznik);
+        descriptionVBox.add(Box.createVerticalStrut(10));
+        descriptionVBox.add(uzytkownikName);
+        descriptionVBox.add(Box.createVerticalStrut(10));
+        descriptionVBox.add(uzytkownikSurname);
+        descriptionVBox.add(Box.createVerticalStrut(10));
+        descriptionVBox.add(kwota);
+
+
+        MyButton editButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
+        editButton.setText("edit");
+        editButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (testOps.getPerms() == 0) {
+                    getErrorDialog("Goœcie nie mog¹ zmieniaæ bazy!");
+                } else {
+                    Connection con = testOps.getConnection();
+                    ResultSet rs0 = null;
+                    Statement st0 = null;
+                    try {
+                        st0 = con.createStatement();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                    String userID = null;
+                    String QueryGETUSERID = "SELECT id FROM uzytkownik WHERE imie = '" + userNameField.getText()
+                            + "' AND nazwisko = '" + userSurnameField.getText() + "'";
+                    try {
+                        rs0 = st0.executeQuery(QueryGETUSERID);
+//                        if()
+                        userID = rs0.getString("id");
+                    } catch (SQLException e) {
+                        getErrorDialog("Can't get user_id");
+                        e.printStackTrace();
+                    }
+                    try {
+                        con.close();
+                    } catch (SQLException ex) {
+                        getErrorDialog("Can't close connection");
+                        ex.printStackTrace();
+                    }
+
+
+                    String QueryEDIT = "UPDATE detaleOplat SET przelicznik = " + przelicznikField.getText() +
+                            ",  id_uzytkownika = " + userID +
+                            ", kwotaBazowa = " + kwotaField.getText() +
+                            "WHERE kontrahent_id = " + kontrahentField.getText();
+                    Statement st = null;
+                    Connection con2 = testOps.getConnection();
+                    try {
+                        st = con2.createStatement();
+                        try {
+                            st.executeUpdate(QueryEDIT);
+                            getErrorDialog("Record edition succesfull");
+                        } catch (SQLException e) {
+                            getErrorDialog("Can't edit item");
+                            e.printStackTrace();
+                        }
+                    } catch (SQLException e) {
+                        getErrorDialog("Can't create statement");
+                        e.printStackTrace();
+                    }
+                    try {
+                        con2.close();
+                    } catch (SQLException e) {
+                        getErrorDialog("Can't close connection");
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+        });
+        smallVbox.add(editButton);
+
+        MyButton addButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
+        addButton.setText("add");
+        addButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (testOps.getPerms() == 0) {
+                    getErrorDialog("Goœcie nie mog¹ zmieniaæ bazy!");
+                } else {
+                    Connection con = testOps.getConnection();
+                    String QueryADD = "INSERT INTO detaleOplat VALUES ('" + kontrahentField.getText() + "', '" +
+                            przelicznikField.getText() + "', " +
+                            "(SELECT id FROM uzytkownik WHERE imie = '" + userNameField.getText() +
+                            "' AND nazwisko = '" + userSurnameField.getText() + "'), " +
+                            kwotaField.getText() + ")";
+
+                    Statement st = null;
+                    try {
+                        st = con.createStatement();
+                        try {
+                            st.executeUpdate(QueryADD);
+                            getErrorDialog("Record addition succesfull");
+                        } catch (SQLException e) {
+                            getErrorDialog("Can't add item");
+                            e.printStackTrace();
+                        }
+                    } catch (SQLException e) {
+                        getErrorDialog("Can't create statement");
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+        });
+        smallVbox.add(addButton);
+
+
+        MyButton deleteButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
+        deleteButton.setText("delete");
+        deleteButton.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+
+                if (testOps.getPerms() < 2) {
+                    getErrorDialog("Tylko admin moze ususwac!");
+                } else {
+
+//                    getErrorDialog(listOfPayments.getSelectedIndex() + "");
+                    Connection con = testOps.getConnection();
+
+                    String QueryDELETE = "DELETE FROM detaleOplat WHERE id = " + (listOfPayments.getSelectedIndex() + 1);
+
+                    Statement st = null;
+                    try {
+                        st = con.createStatement();
+                        try {
+                            st.executeUpdate(QueryDELETE);
+                            getErrorDialog("Record deletion succesfull");
+                            listOfPayments.ensureIndexIsVisible(model.getSize());
+
+
+                        } catch (SQLException e) {
+                            getErrorDialog("Can't delete item");
+                            e.printStackTrace();
+                        }
+                    } catch (SQLException e) {
+                        getErrorDialog("Can't create statement");
+                        e.printStackTrace();
+                    }
+                    try {
+                        con.close();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+
+        });
+        smallVbox.add(deleteButton);
+
+
+        tempDialog.setVisible(true);
     }
 }

@@ -89,8 +89,7 @@ public class AppWindow extends JFrame {
                 try {
                     if (rs2.next() && rs2 != null) {
                         testOps.setPerms(Integer.parseInt(rs2.getString("perms")));
-                    }
-                    else
+                    } else
                         appGraph.getErrorDialog("Bledne dane logowania");
                 } catch (SQLException e) {
                     appGraph.getErrorDialog("Blad SQL");
@@ -125,9 +124,14 @@ public class AppWindow extends JFrame {
         JMenuItem postalCodes = new JMenuItem("Lista kodów pocztowych");
 //        postalCodes.addActionListener();
         JMenuItem listOfUsers = new JMenuItem("Lista uzytkowników");
+        JMenuItem payments = new JMenuItem("Oplaty");
+        JMenuItem cars = new JMenuItem("Samochody");
+
 
         tempMenu.add(postalCodes);
         tempMenu.add(listOfUsers);
+        tempMenu.add(payments);
+        tempMenu.add(cars);
 
         //Make menu options do something
         postalCodes.addActionListener((new ActionListener() {
@@ -152,7 +156,34 @@ public class AppWindow extends JFrame {
                         e.printStackTrace();
                     }
                 else
-                    appGraph.getErrorDialog("Gosci nie maja dostepu do bazy ");
+                    appGraph.getErrorDialog("Goscie nie maja dostepu do bazy ");
+            }
+        }));
+
+
+        payments.addActionListener((new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (testOps.getPerms() > 0) {
+                    try {
+                        AppGraph.getInstance().getPaymentDialog(); //.setVisible(true);
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                } else
+                    appGraph.getErrorDialog("Goscie maja dostepu do platnosci");
+            }
+        }));
+
+        cars.addActionListener((new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (testOps.getPerms() > 0)
+                    try {
+                        AppGraph.getInstance().getCarsDialog();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                else
+                    appGraph.getErrorDialog("Goscie nie maja dostepu do bazy ");
             }
         }));
 
