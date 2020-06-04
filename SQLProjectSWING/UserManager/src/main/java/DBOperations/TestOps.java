@@ -1,9 +1,12 @@
 package DBOperations;
 
+import application.AppGraph;
+
 import java.sql.*;
 
 public class TestOps {
     public int perms = 0;
+//    AppGraph appGraph = new AppGraph();
 
     public void testConnection() {
         try {
@@ -142,5 +145,17 @@ public class TestOps {
 
     public void setPerms(int newPerms) {
         this.perms = newPerms;
+    }
+
+    public String getID(int index, String[] ids) {
+        int i = 0;
+        for (i = 0; i < index; i++) {
+            if (i == index - 1) {
+                System.out.println("Pusta tablica");
+            } else if (ids[i] == null) {
+                i++;
+            }
+        }
+        return ids[i];
     }
 }

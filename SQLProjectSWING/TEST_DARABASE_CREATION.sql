@@ -1,7 +1,3 @@
-USE SQLProject
-
-DROP TABLE IF EXISTS kierowcy
-DROP TABLE IF EXISTS samochodyUzytkownikow
 DROP TABLE IF EXISTS detaleOplat
 DROP TABLE IF EXISTS przelicznikiOplat
 DROP TABLE IF EXISTS kontrahentDane
@@ -17,8 +13,8 @@ DROP TABLE IF EXISTS uzytkownik
 DROP TABLE IF EXISTS grupa_uprawnienia
 DROP TABLE IF EXISTS grupa_uzytkownikow
 DROP TABLE IF EXISTS urzadzenie
-GO
 
+GO
 
 
 
@@ -164,22 +160,6 @@ kolor VARCHAR(20),
 model VARCHAR(30)
 )
 
-CREATE TABLE kierowcy(
-id INT PRIMARY KEY IDENTITY,
-imie VARCHAR(30),
-nazwisko VARCHAR(30),
-samochod_id INT FOREIGN KEY REFERENCES samochody(id)
-)
-
-
-CREATE TABLE samochodyUzytkownikow(
-id INT PRIMARY KEY IDENTITY,
-id_samochodu INT FOREIGN KEY REFERENCES samochody(id),
-id_uzytkownika INT FOREIGN KEY REFERENCES uzytkownik(id),
-lataPosiadania INT DEFAULT 0,
-wypadkowy BIT DEFAULT 0
-)
-
 
 
 INSERT INTO kontrahentDane VALUES
@@ -231,16 +211,6 @@ INSERT INTO logowanie VALUES
 ('user2', 'user2', 1),
 ('admin', 'admin', 2)
 
-INSERT INTO samochodyUzytkownikow VALUES
-(1, 1 , 14, 1),
-(1, 2, 5, 0),
-(2, 3, 1, 0),
-(3, 1, 10, 0)
-
-INSERT INTO kierowcy VALUES
-('test1', 'test1', 1),
-('test2', 'test2', 2)
-
 SELECT * FROM kod_poczt_1
 SELECT * FROM kraj
 SELECT * FROM kontakt_do_kontrahenta
@@ -284,21 +254,5 @@ INSERT INTO detaleOplat VALUES
 SELECT *, kwotaBazowa*przelicznik AS kwotaKoncowa FROM detaleOplat
 
 SELECT * FROM samochody
-
---SELECT *, (SELECT imie, nazwisko FROM uzytkownik WHERE id = id_uzytkownika) FROM samochodyUzytkownikow
-
-SELECT * FROM samochodyUzytkownikow
-
-SELECT * FROM przelicznikiOplat
-
-UPDATE przelicznikiOplat
-SET cena1 = 10,
-cena2 = 12,
-cena3 = 1
-WHERE nazwa = 'tanio' 
-
-SELECT * FROM przelicznikiOplat
-
-SELECT * FROM logowanie
-
-DELETE FROM logowanie WHERE login = 'testGuest'
+DELETE FROM samochody WHERE id = 1
+SELECT * FROM samochody

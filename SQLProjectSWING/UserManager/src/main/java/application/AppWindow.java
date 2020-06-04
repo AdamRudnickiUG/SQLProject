@@ -121,17 +121,23 @@ public class AppWindow extends JFrame {
 
         JMenu tempMenu = new JMenu("Menu");
 
-        JMenuItem postalCodes = new JMenuItem("Lista kodów pocztowych");
-//        postalCodes.addActionListener();
-        JMenuItem listOfUsers = new JMenuItem("Lista uzytkowników");
+        JMenuItem postalCodes = new JMenuItem("Lista kodow pocztowych");
+        JMenuItem listOfUsers = new JMenuItem("Lista uzytkownikow");
         JMenuItem payments = new JMenuItem("Oplaty");
         JMenuItem cars = new JMenuItem("Samochody");
+//        JMenuItem userCars = new JMenuItem("Samochody klientow");
+        JMenuItem paymentModels = new JMenuItem("Modele oplat");
+        JMenuItem drivers = new JMenuItem("Lista kierowcow");
+
 
 
         tempMenu.add(postalCodes);
         tempMenu.add(listOfUsers);
+        tempMenu.add(drivers);
         tempMenu.add(payments);
         tempMenu.add(cars);
+//        tempMenu.add(userCars);
+        tempMenu.add(paymentModels);
 
         //Make menu options do something
         postalCodes.addActionListener((new ActionListener() {
@@ -151,7 +157,21 @@ public class AppWindow extends JFrame {
             public void actionPerformed(ActionEvent actionEvent) {
                 if (testOps.getPerms() > 0)
                     try {
-                        AppGraph.getInstance().getClientListDialog().setVisible(true);
+                        AppGraph.getInstance().getClientsDialog();
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                else
+                    appGraph.getErrorDialog("Goscie nie maja dostepu do bazy ");
+            }
+        }));
+
+
+        drivers.addActionListener((new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                if (testOps.getPerms() > 0)
+                    try {
+                        AppGraph.getInstance().getDriversDialog();
                     } catch (SQLException e) {
                         e.printStackTrace();
                     }
@@ -176,20 +196,41 @@ public class AppWindow extends JFrame {
 
         cars.addActionListener((new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                if (testOps.getPerms() > 0)
-                    try {
-                        AppGraph.getInstance().getCarsDialog();
-                    } catch (SQLException e) {
-                        e.printStackTrace();
-                    }
-                else
-                    appGraph.getErrorDialog("Goscie nie maja dostepu do bazy ");
+                try {
+                    AppGraph.getInstance().getCarsDialog();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+        }));
+
+
+        paymentModels.addActionListener((new ActionListener() {
+            public void actionPerformed(ActionEvent actionEvent) {
+                try {
+                    AppGraph.getInstance().getRefactorsDialog();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
             }
         }));
 
 
         //filling menuBar
         tempMenuBar.add(tempMenu);
+
+//        userCars.addActionListener((new ActionListener() {
+//            public void actionPerformed(ActionEvent actionEvent) {
+//                if (testOps.getPerms() > 0)
+//                    try {
+//                        AppGraph.getInstance().getUsersCarsDialog();
+//                    } catch (SQLException e) {
+//                        e.printStackTrace();
+//                    }
+//                else
+//                    appGraph.getErrorDialog("Goscie nie maja dostepu do bazy ");
+//            }
+//        }));
 
         return tempMenuBar;
     }
@@ -198,20 +239,42 @@ public class AppWindow extends JFrame {
         topPanel = new JPanel();
         UiUtils.minMaxPrefHeight(topPanel, GlobalSizes.menuHeight + 10);
         UiUtils.border(topPanel, Color.lightGray, 0, 0, 1, 0);
+        topPanel.add(getLoginsButton());
         topPanel.add(defaultMenu());
+
         return topPanel;
     }
 
+    private JButton getLoginsButton(){
+        final JButton temp = new JButton();
 
-    private JButton makeDefaultButton(String displayedText) {
-        MyButton tempButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
-        tempButton.setText(displayedText);
+        temp.setText("konta");
+        temp.setSize(GlobalSizes.menuHeight, GlobalSizes.buttonWidth);
 
-        tempButton.addActionListener(new ActionListener() {
+        temp.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent actionEvent) {
-                AppGraph.getInstance().getJustDialog().setVisible(true);
+                if(testOps.getPerms() == 0){
+                    appGraph.getErrorDialog("Brak dostepu do tych danych");
+                }
+                else {
+                    AppGraph.getInstance().getProgramAccountsDialog();
+                }
             }
         });
-        return tempButton;
+
+        return temp;
     }
+
+
+//    private JButton makeDefaultButton(String displayedText) {
+//        MyButton tempButton = new MyButton(GlobalSizes.buttonHeight, GlobalSizes.buttonWidth);
+//        tempButton.setText(displayedText);
+//
+//        tempButton.addActionListener(new ActionListener() {
+//            public void actionPerformed(ActionEvent actionEvent) {
+//                AppGraph.getInstance().getJustDialog().setVisible(true);
+//            }
+//        });
+//        return tempButton;
+//    }
 }
